@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Service Requests</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            display: flex; /* Use flexbox for layout */
+            margin: 0; /* Remove default margin */
+            height: 100vh; /* Full height of the viewport */
+        }
+
+        .sidebar {
+            width: 250px; /* Fixed width for the sidebar */
+            background-color: #fff; /* Background color for the sidebar */
+            height: 100%; /* Full height */
+            position: fixed; /* Fixed position */
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Optional shadow */
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+
+        .main-content {
+            margin-left: 250px; /* Margin to accommodate the sidebar */
+            padding: 20px; /* Padding for the main content */
+            flex-grow: 1; /* Allow main content to grow */
+        }
+
+        .table-fixed {
+            width: 100%; /* Full width */
+            max-width: 800px; /* Set a maximum width for the table */
+            table-layout: fixed; /* Fixed layout for the table */
+        }
+
+        .table-fixed th, .table-fixed td {
+            overflow: hidden; /* Hide overflow */
+            text-overflow: ellipsis; /* Show ellipsis for overflow text */
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="sidebar">
+        <div class="flex items-center justify-center mb-8">
+            <img alt="E-Sahakara Logo" class="h-16 w-16" src="logo.png" width="100" height="100" />
+        </div>
+        <nav>
+            <ul>
+                <li class="mb-4">
+                    <a class="flex items-center text-gray-700 hover:text-orange-500" href="#" onclick="showDashboard()">
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a class="flex items-center text-gray-700 hover:text-orange-500" href="#" onclick="toggleDropdown()">
+                        <span>Customer Services</span>
+                        <i class="fas fa-chevron-down ml-auto"></i>
+                    </a>
+                    <ul id="serviceDropdown" class="dropdown hidden">
+                        <li class="mb-2">
+                            <a class="flex items-center justify-between text-gray-700 hover:text-orange-500" href="#" onclick="showRequests('ALL')">
+                                <span>Total Requests</span>
+                                
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a class="flex items-center justify-between text-gray-700 hover:text-orange-500" href="#" onclick="showRequests('PENDING')">
+                                <span>Pending Requests</span>
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a class="flex items-center justify-between text-gray-700 hover:text-orange-500" href="#" onclick="showRequests('RESOLVED')">
+                                <span>Resolved Requests</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="mb-4">
+                    <a class="flex items-center text-gray-700 hover:text-orange-500" href="login.html">
+                        <i class="fas fa-sign-out-alt mr-3"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <div class="main-content">
+        <header class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-gray-700">Admin Service Requests</h1>
+        </header>
+        <div id="summary" class="bg-white p-6 rounded-lg shadow-lg mb-6">
+            <h4 class="mb-4">Service Request Summary</h4>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-blue-500 text-white p-4 rounded-lg text-center cursor-pointer" onclick="showRequests('ALL')">
+                    <h2 class="text-2xl font-bold" id="totalCount">0</h2>
+                    <p>Total Requests</p>
+                </div>
+                <div class="bg-orange-500 text-white p-4 rounded-lg text-center cursor-pointer" onclick="showRequests('PENDING')">
+                    <h2 class="text-2xl font-bold" id="pendingCount">0</h2>
+                    <p>Pending Requests</p>
+                </div>
+                <div class="bg-green-500 text-white p-4 rounded-lg text-center cursor-pointer" onclick="showRequests('RESOLVED')">
+                    <h2 class="text-2xl font-bold" id="resolvedCount">0</h2>
+                    <p>Resolved Requests</p>
+                </div>
+            </div>
+        </div>
+        <div id="requestTable" class="bg-white p-6 rounded-lg shadow-lg mb-6 hidden">
+            <h4 class="mb-4">Service Requests</h4>
+            <table class="min-w-full bg-white border border-gray-300 table-fixed">
+                <thead>
+                    <tr>
+                        <th class="py-2 px-4 border-b text-center align-middle">C. ID</th>
+                        <th class="py-2 px-4 border-b text-center align-middle">C. Email</th>
+                        <th class="py-2 px-4 border-b text-center align-middle">Issue Type</th>
+                        <th class="py-2 px-4 border-b text-center align-middle">Message</th>
+                        <th class="py-2 px-4 border-b text-center align-middle">A. Response</th>
+                        <th class="py-2 px-4 border-b text-center align-middle">C. Response</th>
+                        <th class="py-2 px-4 border-b text-center align-middle">Actions</th>
+                        <th class="py-2 px-4 border-b text-center align-middle">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="requestTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Request Details Modal -->
+        <div id="requestDetailsModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <div id="requestDetailsContent"></div>
+                <button class="close bg-red-500 text-white px-4 py-2 rounded mt-4" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDropdown() {
+            const dropdown = document.getElementById('serviceDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function fetchCounts() {
+            fetch('fetch_counts.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error fetching counts:', data.error);
+                        return;
+                    }
+                    document.getElementById('totalCount').innerText = data.total;
+                    document.getElementById('pendingCount').innerText = data.pending;
+                    document.getElementById('resolvedCount').innerText = data.resolved;
+
+                    // Update navigation counts
+                    document.getElementById('totalCountNav').innerText = data.total;
+                    document.getElementById('pendingCountNav').innerText = data.pending;
+                    document.getElementById('resolvedCountNav').innerText = data.resolved;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function fetchRequests(status) {
+            let url = 'fetch_requests_admin.php';
+            if (status !== 'ALL') {
+                url += `?status=${status}`;
+            }
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error fetching requests:', data.error);
+                        return;
+                    }
+                    displayRequests(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function displayRequests(requests) {
+            const requestTableBody = document.getElementById("requestTableBody");
+            requestTableBody.innerHTML = ""; // Clear existing content
+
+            requests.forEach(request => {
+                const statusColor = request.status === 'RESOLVED' ? 'bg-green-500' : 'bg-orange-500';
+                
+                requestTableBody.innerHTML += `
+                    <tr>
+                        <td class="py-2 px-4 border-b text-center align-middle">${request.customer_id}</td>
+                        <td class="py-2 px-4 border-b text-center align-middle">${request.customer_email}</td>
+                        <td class="py-2 px-4 border-b text-center align-middle">${request.issue_type}</td>
+                        <td class="py-2 px-4 border-b text-center align-middle clickable-message" onclick="showRequestDetails(${request.id})">
+                            ${request.message}
+                        </td>
+                        <td class="py-2 px-4 border-b text-center align-middle clickable-message" onclick="showRequestDetails(${request.id})">
+                            ${request.admin_response || 'No response yet'}
+                        </td>
+                        <td class="py-2 px-4 border-b text-center align-middle">
+                            ${request.customer_response === '👍' ? 
+                                `<button class="bg-green-500 text-white px-3 py-1 rounded">👍</button>` : 
+                                request.customer_response === '👎' ? 
+                                `<button class="bg-orange-500 text-white px-3 py-1 rounded">👎</button>` : 
+                                `<span>No response yet</span>`}
+                        </td>
+                        <td class="py-2 px-4 border-b text-center align-middle">
+                            <div class="flex items-center gap-2 whitespace-nowrap">
+                                <input type="text" id="adminResponse-${request.id}" class="border border-gray-500 rounded" placeholder="Type response...">
+                                </div>
+                                <button class="bg-orange-500 text-white px-3 py-1 rounded shrink-0" onclick="resolveRequest(${request.id})">Send Response</button>
+        
+                        </td>
+                        <td class="py-2 px-4 border-b text-center align-middle">
+                            <button class="${statusColor} text-white px-2 py-1 rounded">${request.status}</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function showRequestDetails(requestId) {
+            fetch(`fetch_request_details.php?id=${requestId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error fetching request details:', data.error);
+                        return;
+                    }
+                    // Populate the details modal content
+                    document.getElementById('requestDetailsContent').innerHTML = `
+                        <h3 class="text-lg font-bold mb-4">Request Details</h3>
+                        <p><strong>Customer ID:</strong> ${data.customer_id}</p>
+                        <p><strong>Customer Email:</strong> ${data.customer_email}</p>
+                        <p><strong>Issue Type:</strong> ${data.issue_type}</p>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                        <p><strong>Admin Response:</strong> ${data.admin_response || 'No response yet'}</p>
+                        <p><strong>Status:</strong> ${data.status}</p>
+                    `;
+                    // Show modal
+                    document.getElementById('requestDetailsModal').style.display = "block";
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('requestDetailsModal').style.display = "none";
+        }
+
+        function resolveRequest(requestId) {
+            const responseInput = document.getElementById(`adminResponse-${requestId}`);
+            const response = responseInput.value.trim();
+
+            fetch('submit_admin_response.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ requestId, response })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Response sent successfully!`);
+                    fetchRequests('ALL');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function showRequests(status) {
+            fetchRequests(status);
+            document.getElementById('requestTable').classList.remove('hidden');
+            document.getElementById('summary').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('requestTable').classList.add('hidden');
+            document.getElementById('summary').classList.remove('hidden');
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchCounts();
+            showDashboard();
+        });
+    </script>
+</body>
+</html>
